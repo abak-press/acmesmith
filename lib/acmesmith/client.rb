@@ -27,7 +27,7 @@ module Acmesmith
       key
     end
 
-    def authorize(*domains)
+    def authorize(*domains, output: nil)
       targets = domains.map do |domain|
         authz = acme.authorize(domain)
         challenges = [authz.http01, authz.dns01, authz.tls_sni01].compact
@@ -44,7 +44,7 @@ module Acmesmith
         end
 
         targets.each do |target|
-          puts "=> Requesting verifications..."
+          puts "=> Requesting verifications...", output
           acme.request_verification(target[:challenge])
         end
 
@@ -56,7 +56,7 @@ module Acmesmith
               next if target[:valid]
 
               status = acme.verify_status(target[:challenge])
-              puts " * [#{target[:domain]}] verify_status: #{status}"
+              puts " * [#{target[:domain]}] verify_status: #{status}", output
 
               if status == 'valid'
                 target[:valid] = true
@@ -66,7 +66,7 @@ module Acmesmith
               all_valid = false
               if status == "invalid"
                 err = target[:challenge].error
-                puts " ! [#{target[:domain]}] #{err["type"]}: #{err["detail"]}"
+                puts " ! [#{target[:domain]}] #{err["type"]}: #{err["detail"]}", output
               end
             end
 
@@ -76,7 +76,7 @@ module Acmesmith
             sleep authorize_retry.fetch(:delay)
           end
 
-          puts "=> Done"
+          puts "=> Done", output
       ensure
         targets.each do |target|
           target[:responder].cleanup(target[:domain], target[:challenge])
@@ -84,7 +84,7 @@ module Acmesmith
       end
     end
 
-    def request(common_name, *sans)
+    def request(common_name, *sans, output: nil)
       csr = Acme::Client::CertificateRequest.new(common_name: common_name, names: sans)
       retried = false
       acme_cert = begin
@@ -93,7 +93,7 @@ module Acmesmith
         raise unless config.auto_authorize_on_request
         raise if retried
 
-        puts "=> Authorizing unauthorized domain names"
+        puts "=> Authorizing unauthorized domain names", output
         # https://github.com/letsencrypt/boulder/blob/b9369a481415b3fe31e010b34e2ff570b89e42aa/ra/ra.go#L604
         m = e.message.match(/authorizations for these names not found or expired: ((?:[a-zA-Z0-9_.\-]+(?:,\s+|$))+)/)
         if m && m[1]
@@ -103,8 +103,8 @@ module Acmesmith
           warn " ! Attempting to authorize all domains in this certificate reuqest for now."
           domains = [common_name, *sans]
         end
-        puts " * #{domains.join(', ')}"
-        authorize(*domains)
+        puts " * #{domains.join(', ')}", output
+        authorize(*domains, output: output)
         retried = true
         retry
       end
@@ -228,6 +228,14 @@ module Acmesmith
     end
 
     private
+
+    def puts(string, output = nil)
+      if output.nil?
+        super(string)
+      else
+        output.puts(string)
+      end
+    end
 
     def config
       @config
