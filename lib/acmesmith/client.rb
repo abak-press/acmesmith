@@ -5,6 +5,13 @@ require 'acme-client'
 
 module Acmesmith
   class Client
+    DEFAULT_AUTHORIZE_RETRY_DELAY = 3.freeze
+    DEFAULT_AUTHORIZE_RETRY_LIMIT = 3.freeze
+
+    class DomainsAreInvalid < StandardError; end
+
+    attr_accessor :output
+
     def initialize(config: nil)
       @config ||= config
     end
@@ -236,9 +243,10 @@ module Acmesmith
         puts "=> Waiting for the validation..."
         puts
 
+        retry_count = 0
+
         loop do
           all_valid = true
-          any_error = false
           targets.each do |target|
             next if target[:valid]
 
@@ -254,13 +262,14 @@ module Acmesmith
 
             all_valid = false
             if status == 'invalid'
-              any_error = true
               err = target[:challenge].error
               puts " ! [#{target[:domain]}] error: #{err.inspect}"
             end
           end
-          break if all_valid || any_error
-          sleep 3
+          break if all_valid
+          retry_count += 1
+          raise DomainsAreInvalid if retry_count == DEFAULT_AUTHORIZE_RETRY_LIMIT
+          sleep DEFAULT_AUTHORIZE_RETRY_DELAY
         end
         puts
 
@@ -312,6 +321,14 @@ module Acmesmith
         ENV['ACMESMITH_ACCOUNT_KEY_PASSPHRASE'] || config['account_key_passphrase']
       else
         config['account_key_passphrase']
+      end
+    end
+
+    def puts(string = '')
+      if output.nil?
+        super(string)
+      else
+        output.puts(string)
       end
     end
   end
