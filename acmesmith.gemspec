@@ -21,8 +21,10 @@ Acmesmith is an [ACME (Automatic Certificate Management Environment)](https://gi
   spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "acme-client"
-  spec.add_dependency "aws-sdk", "> 2"
+  spec.add_dependency "acme-client", '~> 2'
+  spec.add_dependency "aws-sdk-acm"
+  spec.add_dependency "aws-sdk-route53"
+  spec.add_dependency "aws-sdk-s3"
   spec.add_dependency "thor"
 
   spec.add_development_dependency "bundler"

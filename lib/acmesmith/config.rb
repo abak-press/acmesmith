@@ -19,18 +19,21 @@ module Acmesmith
         raise ArgumentError, "config['storage'] must be provided"
       end
 
-      unless @config['endpoint']
-        raise ArgumentError, "config['endpoint'] must be provided, e.g. https://acme-v01.api.letsencrypt.org/ or https://acme-staging.api.letsencrypt.org/"
+      if @config['endpoint'] and !@config['directory']
+        raise ArgumentError, "config['directory'] must be provided, e.g. https://acme-v02.api.letsencrypt.org/directory or https://acme-staging-v02.api.letsencrypt.org/directory\n\nNOTE: We have dropped ACME v1 support since acmesmith v2.0.0. Specify v2 directory API URL using config['directory']."
       end
 
-      if @config['post_issueing_hooks']
-        warn '!! Deprecation warning: configuration "post_issueing_hooks" is now "post_issuing_hooks" (what a typo!). It will not work in the future release.'
-        @config['post_issuing_hooks'] = @config.delete('post_issueing_hooks')
+      unless @config['directory']
+        raise ArgumentError, "config['directory'] must be provided, e.g. https://acme-v02.api.letsencrypt.org/directory or https://acme-staging-v02.api.letsencrypt.org/directory"
       end
     end
 
     def [](key)
       @config[key]
+    end
+
+    def fetch(*args)
+      @config.fetch(*args)
     end
 
     def merge!(pair)
