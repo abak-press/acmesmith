@@ -5,7 +5,11 @@ module Acmesmith
     class PrivateKeyDecrypted < StandardError; end
     class PassphraseRequired < StandardError; end
 
-    CertificateExport = Struct.new(:certificate, :chain, :fullchain, :private_key, keyword_init: true)
+    if RUBY_VERSION < '2.3'
+      CertificateExport = Struct.new(:certificate, :chain, :fullchain, :private_key)
+    else
+      CertificateExport = Struct.new(:certificate, :chain, :fullchain, :private_key, keyword_init: true)
+    end
 
     # Split string containing multiple PEMs into Array of PEM strings.
     # @param [String]

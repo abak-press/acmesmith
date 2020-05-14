@@ -6,7 +6,11 @@ require 'acmesmith/post_issuing_hooks'
 
 module Acmesmith
   class Config
-    ChallengeResponderRule = Struct.new(:challenge_responder, :filter, keyword_init: true)
+    if RUBY_VERSION < '2.3'
+      ChallengeResponderRule = Struct.new(:challenge_responder, :filter)
+    else
+      ChallengeResponderRule = Struct.new(:challenge_responder, :filter, keyword_init: true)
+    end
 
     def self.load_yaml(path)
       new YAML.load_file(path)
@@ -95,10 +99,18 @@ module Acmesmith
           filter = (specs_sub.delete('filter') || {}).map { |k,v| [k.to_sym, v] }.to_h
           specs_sub.map do |k,v|
             responder = ChallengeResponders.find(k).new(**v.map{ |k_,v_| [k_.to_sym, v_]}.to_h)
-            ChallengeResponderRule.new(
-              challenge_responder: responder,
-              filter: ChallengeResponderFilter.new(responder, **filter),
-            )
+
+            if RUBY_VERSION < '2.3'
+              ChallengeResponderRule.new(
+                responder,
+                ChallengeResponderFilter.new(responder, **filter)
+              )
+            else
+              ChallengeResponderRule.new(
+                challenge_responder: responder,
+                filter: ChallengeResponderFilter.new(responder, **filter)
+              )
+            end
           end
         end
       end

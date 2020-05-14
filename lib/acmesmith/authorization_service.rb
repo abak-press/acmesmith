@@ -15,7 +15,13 @@ module Acmesmith
     #  @return [Acmesmith::ChallengeResponders::Base] responder
     # @!attribute [r] challenge
     #  @return [Acme::Client::Resources::Challenges::Base] challenge
-    AuthorizationProcess = Struct.new(:domain, :authorization, :challenge_responder, :challenge, keyword_init: true) do
+    if RUBY_VERSION < '2.3'
+      INIT_ARGS = [:domain, :authorization, :challenge_responder, :challenge]
+    else
+      INIT_ARGS = [:domain, :authorization, :challenge_responder, :challenge, keyword_init: true]
+    end
+    private_constant :INIT_ARGS
+    AuthorizationProcess = Struct.new(*INIT_ARGS) do
       def completed?
         invalid? || valid?
       end
@@ -127,7 +133,6 @@ module Acmesmith
         $stderr.puts ""
         raise AuthorizationFailed, "Some identifiers failed to challenge: #{invalid_processes.map(&:domain).inspect}"
       end
-
     end
 
     def cleanup
@@ -170,12 +175,21 @@ module Acmesmith
           raise NoApplicableChallengeResponder, "Cannot find a challenge responder for domain #{authz.domain.inspect}"
         end
 
-        AuthorizationProcess.new(
-          domain: authz.domain,
-          authorization: authz,
-          challenge_responder: responder_rule.challenge_responder,
-          challenge: challenge,
-        )
+        if RUBY_VERSION < '2.3'
+          AuthorizationProcess.new(
+            authz.domain,
+            authz,
+            responder_rule.challenge_responder,
+            challenge
+          )
+        else
+          AuthorizationProcess.new(
+            domain: authz.domain,
+            authorization: authz,
+            challenge_responder: responder_rule.challenge_responder,
+            challenge: challenge
+          )
+        end
       end
     end
 
