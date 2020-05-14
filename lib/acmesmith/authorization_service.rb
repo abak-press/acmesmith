@@ -2,6 +2,10 @@ module Acmesmith
   class AuthorizationService
     class NoApplicableChallengeResponder < StandardError; end
     class AuthorizationFailed < StandardError; end
+    class DomainsAreInvalid < StandardError; end
+
+    DEFAULT_AUTHORIZE_RETRY_DELAY = 3
+    DEFAULT_AUTHORIZE_RETRY_LIMIT = 3
 
     # @!attribute [r] domain
     #  @return [String] domain name
@@ -29,7 +33,7 @@ module Acmesmith
       end
     end
 
-    # @param challenge_responder_rules [Array<Acmemith::Config::ChallengeReponderRule>] 
+    # @param challenge_responder_rules [Array<Acmemith::Config::ChallengeReponderRule>]
     # @param authorizations [Array<Acme::Client::Resources::Authorization>]
     def initialize(challenge_responder_rules, authorizations)
       @challenge_responder_rules = challenge_responder_rules
@@ -81,6 +85,8 @@ module Acmesmith
       puts "=> Waiting for the validation..."
       puts
 
+      retry_count = 0
+
       loop do
         processes.each do |process|
           next if process.valid?
@@ -98,8 +104,14 @@ module Acmesmith
             puts " ! [#{process[:domain]}] error: #{err.inspect}"
           end
         end
+
         break if processes.all?(&:completed?)
-        sleep 3
+
+        retry_count += 1
+
+        raise DomainsAreInvalid if retry_count == DEFAULT_AUTHORIZE_RETRY_LIMIT
+
+        sleep DEFAULT_AUTHORIZE_RETRY_DELAY
       end
 
       puts
@@ -170,6 +182,14 @@ module Acmesmith
     # @return [Array<(Acmesmith::ChallengeResponders::Base, Array<AuthorizationProcess>)>]
     def processes_by_responder
       @processes_by_responder ||= processes.group_by(&:responder_id).map { |_, ps| [ps[0].challenge_responder, ps] }
+    end
+
+    def puts(string = '')
+      if output
+        output.puts(string)
+      else
+        super(string)
+      end
     end
   end
 end
