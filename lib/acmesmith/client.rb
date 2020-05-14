@@ -125,7 +125,7 @@ module Acmesmith
     def save_pkcs12(common_name, version: 'current', mode: '0600', output:, passphrase:)
       cert = storage.get_certificate(common_name, version: version)
       cert.key_passphrase = certificate_key_passphrase if certificate_key_passphrase
-      
+
       p12 = cert.pkcs12(passphrase)
       File.open(output, 'w', mode.to_i(8)) do |f|
         f.puts p12.to_der
