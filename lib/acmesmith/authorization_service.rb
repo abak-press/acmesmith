@@ -15,7 +15,7 @@ module Acmesmith
     #  @return [Acmesmith::ChallengeResponders::Base] responder
     # @!attribute [r] challenge
     #  @return [Acme::Client::Resources::Challenges::Base] challenge
-    if RUBY_VERSION < '2.3'
+    if RUBY_VERSION < '2.5'
       INIT_ARGS = [:domain, :authorization, :challenge_responder, :challenge]
     else
       INIT_ARGS = [:domain, :authorization, :challenge_responder, :challenge, keyword_init: true]
@@ -175,7 +175,7 @@ module Acmesmith
           raise NoApplicableChallengeResponder, "Cannot find a challenge responder for domain #{authz.domain.inspect}"
         end
 
-        if RUBY_VERSION < '2.3'
+        if RUBY_VERSION < '2.5'
           AuthorizationProcess.new(
             authz.domain,
             authz,
