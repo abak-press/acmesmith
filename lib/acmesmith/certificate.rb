@@ -5,7 +5,7 @@ module Acmesmith
     class PrivateKeyDecrypted < StandardError; end
     class PassphraseRequired < StandardError; end
 
-    if RUBY_VERSION < '2.3'
+    if RUBY_VERSION < '2.5'
       CertificateExport = Struct.new(:certificate, :chain, :fullchain, :private_key)
     else
       CertificateExport = Struct.new(:certificate, :chain, :fullchain, :private_key, keyword_init: true)

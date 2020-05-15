@@ -6,7 +6,7 @@ require 'acmesmith/post_issuing_hooks'
 
 module Acmesmith
   class Config
-    if RUBY_VERSION < '2.3'
+    if RUBY_VERSION < '2.5'
       ChallengeResponderRule = Struct.new(:challenge_responder, :filter)
     else
       ChallengeResponderRule = Struct.new(:challenge_responder, :filter, keyword_init: true)
@@ -100,7 +100,7 @@ module Acmesmith
           specs_sub.map do |k,v|
             responder = ChallengeResponders.find(k).new(**v.map{ |k_,v_| [k_.to_sym, v_]}.to_h)
 
-            if RUBY_VERSION < '2.3'
+            if RUBY_VERSION < '2.5'
               ChallengeResponderRule.new(
                 responder,
                 ChallengeResponderFilter.new(responder, **filter)
