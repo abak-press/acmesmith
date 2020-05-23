@@ -197,13 +197,5 @@ module Acmesmith
     def processes_by_responder
       @processes_by_responder ||= processes.group_by(&:responder_id).map { |_, ps| [ps[0].challenge_responder, ps] }
     end
-
-    def puts(string = '')
-      if output
-        output.puts(string)
-      else
-        super(string)
-      end
-    end
   end
 end
